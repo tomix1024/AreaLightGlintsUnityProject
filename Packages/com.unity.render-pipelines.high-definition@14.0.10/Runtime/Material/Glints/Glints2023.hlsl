@@ -5,7 +5,7 @@ static const float DEG2RAD = 0.01745329251;
 static const float RAD2DEG = 57.2957795131;
 
 Texture2D<float4> _Glint2023NoiseMap;
-int _Glint2023NoiseMapSize;
+float4 _Glint2023NoiseMap_TexelSize;
 float _ScreenSpaceScale;
 float _LogMicrofacetDensity;
 float _MicrofacetRoughness;
@@ -92,7 +92,7 @@ float HashWithoutSine13(float3 p3)
 
 float2x2 Inverse(float2x2 A)
 {
-	return float2x2(A[1][1], -A[0][1], -A[1][0], A[0][0]) / determinant(A);
+	return float2x2(A[1][1], -A[0][1], -A[1][0], A[0][0]) / max(1e-6, determinant(A));
 }
 
 void GetGradientEllipse(float2 duvdx, float2 duvdy, out float2 ellipseMajor, out float2 ellipseMinor)
@@ -108,13 +108,13 @@ void GetGradientEllipse(float2 duvdx, float2 duvdy, out float2 ellipseMajor, out
 
 	float T = a + d;
 	float D = a * d - b * c;
-	float L1 = T / 2.0 - pow(T * T / 3.99999 - D, 0.5);
-	float L2 = T / 2.0 + pow(T * T / 3.99999 - D, 0.5);
+	float L1 = T / 2.0 - sqrt(max(0, T * T / 3.99999 - D));
+	float L2 = T / 2.0 + sqrt(max(0, T * T / 3.99999 - D));
 
 	float2 A0 = float2(L1 - d, c);
 	float2 A1 = float2(L2 - d, c);
-	float r0 = 1.0 / sqrt(L1);
-	float r1 = 1.0 / sqrt(L2);
+	float r0 = rsqrt(L1);
+	float r1 = rsqrt(L2);
 	ellipseMajor = normalize(A0) * r0;
 	ellipseMinor = normalize(A1) * r1;
 }
@@ -241,7 +241,7 @@ void UnpackFloatParallel4(float4 input, out float4 a, out float4 b)
 //=======================================================================================
 void CustomRand4Texture(float2 slope, float2 slopeRandOffset, out float4 outUniform, out float4 outGaussian, out float2 slopeLerp)
 {
-	int2 size = _Glint2023NoiseMapSize.rr;
+	int2 size = _Glint2023NoiseMap_TexelSize.zw;
 	float2 slope2 = abs(slope) / _MicrofacetRoughness;
 	slope2 = slope2 + (slopeRandOffset * size);
 	slopeLerp = frac(slope2);
@@ -294,7 +294,7 @@ float SampleGlintGridSimplex(float2 uv, uint gridSeed, float2 slope, float footp
 	CustomRand4Texture(slope, rand2.yz, rand2SlopesB, rand2SlopesG, slopeLerp2);
 
 	// Compute microfacet count with randomization
-	float3 logDensityRand = clamp(sampleNormalDistribution(float3(rand0.x, rand1.x, rand2.x), _LogMicrofacetDensity.rrr, _DensityRandomization), 0.0, 50.0); // TODO : optimize sampleNormalDist
+	float3 logDensityRand = clamp(sampleNormalDistribution(float3(rand0.x, rand1.x, rand2.x), _LogMicrofacetDensity, _DensityRandomization), 0.0, 50.0); // TODO : optimize sampleNormalDist
 	float3 microfacetCount = max(0.0.rrr, footprintArea.rrr * exp(logDensityRand));
 	float3 microfacetCountBlended = microfacetCount * gridWeight;
 
@@ -414,7 +414,7 @@ void GetAnisoCorrectingGridTetrahedron(bool centerSpecialCase, inout float theta
 	return;
 }
 
-float4 SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF, float2 uv, float2 duvdx, float2 duvdy)
+float SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF, float2 uv, float2 duvdx, float2 duvdy)
 {
 	// ACCURATE PIXEL FOOTPRINT ELLIPSE
 	float2 ellipseMajor, ellipseMinor;
@@ -429,13 +429,13 @@ float4 SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF
 
 	// MANUAL LOD COMPENSATION
 	float lod = log2(length(ellipseMinor) * halfScreenSpaceScaler);
-	float lod0 = (int)lod; //lod >= 0.0 ? (int)(lod) : (int)(lod - 1.0);
+	float lod0 = floor(lod); //lod >= 0.0 ? (int)(lod) : (int)(lod - 1.0);
 	float lod1 = lod0 + 1;
-	float divLod0 = pow(2.0, lod0);
-	float divLod1 = pow(2.0, lod1);
+	float divLod0 = exp2(lod0);
+	float divLod1 = exp2(lod1);
 	float lodLerp = frac(lod);
-	float footprintAreaLOD0 = pow(exp2(lod0), 2.0);
-	float footprintAreaLOD1 = pow(exp2(lod1), 2.0);
+	float footprintAreaLOD0 = divLod0*divLod0;// = pow(exp2(lod0), 2.0);
+	float footprintAreaLOD1 = divLod1*divLod1;// = pow(exp2(lod1), 2.0);
 
 	// MANUAL ANISOTROPY RATIO COMPENSATION
 	float ratio0 = max(pow(2.0, (int)log2(ellipseRatio)), 1.0);
@@ -456,7 +456,7 @@ float4 SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF
 	thetaBin0 = thetaBin0 <= 0.0 ? 180.0 + thetaBin0 : thetaBin0;
 
 	// TETRAHEDRONIZATION OF ROTATION + RATIO + LOD GRID
-	bool centerSpecialCase = (ratio0.x == 1.0);
+	bool centerSpecialCase = (ratio0 == 1.0);
 	float2 divLods = float2(divLod0, divLod1);
 	float2 footprintAreas = float2(footprintAreaLOD0, footprintAreaLOD1);
 	float2 ratios = float2(ratio0, ratio1);
