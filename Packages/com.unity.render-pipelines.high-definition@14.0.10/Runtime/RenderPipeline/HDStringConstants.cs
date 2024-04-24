@@ -865,6 +865,7 @@ namespace UnityEngine.Rendering.HighDefinition
         public static readonly int _PreIntegratedFGD_GGXDisneyDiffuse = Shader.PropertyToID("_PreIntegratedFGD_GGXDisneyDiffuse");
         public static readonly int _PreIntegratedFGD_CharlieAndFabric = Shader.PropertyToID("_PreIntegratedFGD_CharlieAndFabric");
         public static readonly int _PreIntegratedFGD_Marschner = Shader.PropertyToID("_PreIntegratedFGD_Marschner");
+        public static readonly int _PreIntegratedFGD_DGGXOnly = Shader.PropertyToID("_PreIntegratedFGD_DGGXOnly");
         public static readonly int _PreIntegratedAzimuthalScattering = Shader.PropertyToID("_PreIntegratedAzimuthalScattering");
 
         public static readonly int _ExposureTexture = Shader.PropertyToID("_ExposureTexture");
@@ -1357,6 +1358,7 @@ namespace UnityEngine.Rendering.HighDefinition
         internal const string kCoatMaskMap = "_CoatMaskMap";
 
         // Glints...
+        internal const string kGlintNDFIntegrationMode = "_GlintNDFIntegrationMode";
         internal const string kLogSinSunAngle = "_LogSinSunAngle";
         internal const string kSunSolidAngle = "_SunSolidAngle";
     }

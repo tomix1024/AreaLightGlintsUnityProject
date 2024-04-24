@@ -155,6 +155,8 @@ MonoBehaviour:
       type: 3}
     preIntegratedFGD_MarschnerPS: {fileID: 4800000, guid: 31f36caf0a5e7f848a1b5328b6ad3eb8,
       type: 3}
+    preIntegratedFGD_DGGXOnlyPS: {fileID: 4800000, guid: 57ac68cbe1b67c9f5a116f70c0ce5675,
+      type: 3}
     preIntegratedFiberScatteringCS: {fileID: 7200000, guid: 4a087c9d074552c48aeb85184d56312e,
       type: 3}
     volumetricMaterialCS: {fileID: 7200000, guid: 26f18c9cb0bccbf4481f8c84579affb1,

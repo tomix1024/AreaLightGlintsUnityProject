@@ -127,6 +127,7 @@ Shader "HDRP/Lit"
         _LogSinSunAngle("_LogSinSunAngle < 0", Range(-7, 0)) = -5.38 // 4.6e-3 // TODO maybe sin(angle) in 0, 1 instead?
         [HideInInspector]_SunSolidAngle("_SunSolidAngle", Float) = 0.00006670272
         _ZeroIfPgt1("_ZeroIfPgt1", Range(0, 1)) = 0
+        [Enum(Specular LTC, 0, NDF LTC, 1, NDF LTC Aligned, 2)] _GlintNDFIntegrationMode("_GlintNDFIntegrationMode", Int) = 0
 
 
         // Stencil state
@@ -333,6 +334,9 @@ Shader "HDRP/Lit"
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_IRIDESCENCE
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_SPECULAR_COLOR
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_GLINTS
+
+    #pragma shader_feature_local_fragment _ _GLINTS_NDF_DEDICATED_LTC
+
 
     #pragma shader_feature_local _ADD_PRECOMPUTED_VELOCITY
 

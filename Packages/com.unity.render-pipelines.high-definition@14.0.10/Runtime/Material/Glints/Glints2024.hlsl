@@ -6,6 +6,7 @@ float _OverrideDMax;
 //float _LogSinSunAngle;
 float _SunSolidAngle;
 float _ZeroIfPgt1;
+int _GlintNDFIntegrationMode;
 
 float ComputeTotalNDF(float roughness)
 {
@@ -51,5 +52,31 @@ float SampleGlints2024NDF(float3 halfwayTS, float LdotH, float roughness, float2
         return 1;
 
     float D = SampleGlints2023NDF(halfwayTS, Dtarget, Dmax, uv, duvdx, duvdy);
+    return D;
+}
+
+
+
+float SampleGlints2024NDF_Area(float3 halfwayTS, float LdotH, float roughness, float integratedNDF, float4x3 lightVerts, float2 uv, float2 duvdx, float2 duvdy)
+{
+    // integratedNDF = \int_light D(H)/(4*LdotH) dL
+
+    // Approx. \int_hemisphere D(h) dh
+    float totalNDF = ComputeTotalNDF(roughness);
+
+    if (integratedNDF > totalNDF)
+        integratedNDF *= 1-_ZeroIfPgt1;
+    float p = saturate(integratedNDF / totalNDF); // = R*Dtarget/Dmax
+
+    // Skip computation below if probability is zero!
+    if (p == 0)
+        return 0;
+
+    // Explicitly simulate smooth surface if _LogMicrofacetDensity < 0
+    if (_LogMicrofacetDensity <= 0)
+        return 1;
+
+    // Division by microfacet count handled internally.
+    float D = SampleGlints2023NDF_Internal(halfwayTS, p, uv, duvdx, duvdy) / p;
     return D;
 }

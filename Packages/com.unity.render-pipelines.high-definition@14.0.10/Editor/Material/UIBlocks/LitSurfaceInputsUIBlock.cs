@@ -112,6 +112,7 @@ namespace UnityEditor.Rendering.HighDefinition
             public static GUIContent overrideDMaxText = new GUIContent("OverrideDMax");
             public static GUIContent logSinSunAngleText = new GUIContent("LogSinSunAngle");
             public static GUIContent zeroIfPgt1Text = new GUIContent("Zero if p > 1");
+            public static GUIContent glintNDFIntegrationModeText = new GUIContent("NDFIntegrationMode");
 
             // Layer Options
             public static readonly GUIContent layerTexWorldScaleText = EditorGUIUtility.TrTextContent("World Scale", "Sets the tiling factor of the Planar/Trilinear mapping.");
@@ -239,6 +240,8 @@ namespace UnityEditor.Rendering.HighDefinition
         const string kLogSinSunAngle = "_LogSinSunAngle";
         MaterialProperty zeroIfPgt1 = null;
         const string kZeroIfPgt1 = "_ZeroIfPgt1";
+        MaterialProperty glintNDFIntegrationMode = null;
+        const string kGlintNDFIntegrationMode = "_GlintNDFIntegrationMode";
 
         // Material ID
         MaterialProperty materialID = null;
@@ -375,6 +378,7 @@ namespace UnityEditor.Rendering.HighDefinition
             overrideDMax = FindProperty(kOverrideDMax);
             logSinSunAngle = FindProperty(kLogSinSunAngle);
             zeroIfPgt1 = FindProperty(kZeroIfPgt1);
+            glintNDFIntegrationMode = FindProperty(kGlintNDFIntegrationMode);
 
             // Sub surface
             diffusionProfileHash = FindPropertyLayered(kDiffusionProfileHash, m_LayerCount);
@@ -697,6 +701,7 @@ namespace UnityEditor.Rendering.HighDefinition
             materialEditor.ShaderProperty(overrideDMax, Styles.overrideDMaxText);
             materialEditor.ShaderProperty(logSinSunAngle, Styles.logSinSunAngleText);
             materialEditor.ShaderProperty(zeroIfPgt1, Styles.zeroIfPgt1Text);
+            materialEditor.ShaderProperty(glintNDFIntegrationMode, Styles.glintNDFIntegrationModeText);
 
             EditorGUILayout.Space();
         }

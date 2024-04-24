@@ -219,23 +219,27 @@ namespace UnityEngine.Rendering.HighDefinition
         public override void Build(HDRenderPipelineAsset hdAsset, HDRenderPipelineRuntimeResources defaultResources)
         {
             PreIntegratedFGD.instance.Build(PreIntegratedFGD.FGDIndex.FGD_GGXAndDisneyDiffuse);
+            PreIntegratedFGD.instance.Build(PreIntegratedFGD.FGDIndex.FGD_DGGXOnly);
             LTCAreaLight.instance.Build();
         }
 
         public override void Cleanup()
         {
             PreIntegratedFGD.instance.Cleanup(PreIntegratedFGD.FGDIndex.FGD_GGXAndDisneyDiffuse);
+            PreIntegratedFGD.instance.Cleanup(PreIntegratedFGD.FGDIndex.FGD_DGGXOnly);
             LTCAreaLight.instance.Cleanup();
         }
 
         public override void RenderInit(CommandBuffer cmd)
         {
             PreIntegratedFGD.instance.RenderInit(PreIntegratedFGD.FGDIndex.FGD_GGXAndDisneyDiffuse, cmd);
+            PreIntegratedFGD.instance.RenderInit(PreIntegratedFGD.FGDIndex.FGD_DGGXOnly, cmd);
         }
 
         public override void Bind(CommandBuffer cmd)
         {
             PreIntegratedFGD.instance.Bind(cmd, PreIntegratedFGD.FGDIndex.FGD_GGXAndDisneyDiffuse);
+            PreIntegratedFGD.instance.Bind(cmd, PreIntegratedFGD.FGDIndex.FGD_DGGXOnly);
             LTCAreaLight.instance.Bind(cmd);
         }
     }
