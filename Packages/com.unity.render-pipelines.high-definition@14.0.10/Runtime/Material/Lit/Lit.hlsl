@@ -1786,6 +1786,40 @@ DirectLighting EvaluateBSDF_Rect(   LightLoopContext lightLoopContext,
             if (HasFlag(bsdfData.materialFeatures, MATERIALFEATUREFLAGS_LIT_GLINTS) &&
                 dot(bsdfData.glintDUVDX, bsdfData.glintDUVDX) > 0 && dot(bsdfData.glintDUVDY, bsdfData.glintDUVDY) > 0)
             {
+                //#define _GLINTS_SUBDIVIDE_AREA_LIGHT
+#ifdef _GLINTS_SUBDIVIDE_AREA_LIGHT
+                {
+                    float integratedNDF_subdivided[GLINT_SUBDIVISION_CELL_COUNT];
+                    float3 ltcValue3_subdivided[GLINT_SUBDIVISION_CELL_COUNT];
+                    float ltcValue_subdivided[GLINT_SUBDIVISION_CELL_COUNT];
+                    // Subdivide light source (in Do domain), but before clipping for simplicity!
+                    PolygonIrradiance_Subdivided(lightVerts, preLightData.ltcTransformSpecular, ltcValue_subdivided);
+                    float ltcValueNDF_subdivided[GLINT_SUBDIVISION_CELL_COUNT] = ltcValue_subdivided;
+    #ifdef _GLINTS_NDF_DEDICATED_LTC
+                    {
+                        // Subdivide light source (in Do domain), but before clipping for simplicity!
+                        PolygonIrradiance_Subdivided(lightVerts, preLightData.ltcTransformDGGXonly, ltcValueNDF_subdivided);
+                    }
+    #endif // _GLINTS_NDF__GLINTS_NDF_DEDICATED_LTC
+                    for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
+                        integratedNDF_subdivided[i] = preLightData.ndfonlyFGD * ltcValueNDF_subdivided[i];
+                    // specularFGD not included in ltcValue here!
+                    for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
+                        ltcValue3_subdivided[i] = ltcValue_subdivided[i].xxx;
+
+                    float3 L = normalize(lightData.positionRWS);
+                    // TODO use mean light dir for halfway computation here.
+                    float3 H = normalize(L + V);
+                    float LdotH = dot(L, H);
+                    float TdotH = dot(bsdfData.tangentWS, H);
+                    float BdotH = dot(bsdfData.bitangentWS, H);
+                    float NdotH = dot(bsdfData.normalWS, H);
+                    float3 halfwayTS = float3(TdotH, BdotH, NdotH);
+
+                    // We are simply computing the new LTC value!
+                    ltcValue = ComputeGlints2024_Area_Subdivided(halfwayTS, LdotH, bsdfData.roughnessT, ltcValue3_subdivided, integratedNDF_subdivided, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+                }
+#else // _GLINTS_SUBDIVIDE_AREA_LIGHT
                 {
                     // TODO validate against using separate LTC transform.
                     // Use `ltcValue` at this stage for NDF integration!
@@ -1812,6 +1846,7 @@ DirectLighting EvaluateBSDF_Rect(   LightLoopContext lightLoopContext,
                     // DIRECTLY "COMMIT" THE RESULT OF THE GLINTS TO `ltcValue`!
                     ltcValue *= D;  // TODO anything to take into account here?!
                 }
+#endif // _GLINTS_SUBDIVIDE_AREA_LIGHT
             }
 
             ltcValue *= lightData.specularDimmer;

@@ -125,6 +125,11 @@ namespace UnityEngine.Rendering.HighDefinition
                 CoreUtils.SetKeyword(material, "_GLINTS_NDF_DEDICATED_LTC", integrationMode == 1 || integrationMode == 2);
             }
 
+            if (material.HasProperty(kGlintAreaLightSubdivision))
+            {
+                CoreUtils.SetKeyword(material, "_GLINTS_SUBDIVIDE_AREA_LIGHT", material.GetFloat(kGlintAreaLightSubdivision) > 0);
+            }
+
             if (material.HasProperty(kLogSinSunAngle) && material.HasProperty(kSunSolidAngle))
             {
                 float logSinSunAngle = material.GetFloat(kLogSinSunAngle);

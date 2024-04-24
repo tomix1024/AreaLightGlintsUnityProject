@@ -113,6 +113,7 @@ namespace UnityEditor.Rendering.HighDefinition
             public static GUIContent logSinSunAngleText = new GUIContent("LogSinSunAngle");
             public static GUIContent zeroIfPgt1Text = new GUIContent("Zero if p > 1");
             public static GUIContent glintNDFIntegrationModeText = new GUIContent("NDFIntegrationMode");
+            public static GUIContent glintAreaLightSubdivisionText = new GUIContent("AreaLightSubdivision");
 
             // Layer Options
             public static readonly GUIContent layerTexWorldScaleText = EditorGUIUtility.TrTextContent("World Scale", "Sets the tiling factor of the Planar/Trilinear mapping.");
@@ -242,6 +243,8 @@ namespace UnityEditor.Rendering.HighDefinition
         const string kZeroIfPgt1 = "_ZeroIfPgt1";
         MaterialProperty glintNDFIntegrationMode = null;
         const string kGlintNDFIntegrationMode = "_GlintNDFIntegrationMode";
+        MaterialProperty glintAreaLightSubdivision = null;
+        const string kGlintAreaLightSubdivision = "_GlintAreaLightSubdivision";
 
         // Material ID
         MaterialProperty materialID = null;
@@ -379,6 +382,7 @@ namespace UnityEditor.Rendering.HighDefinition
             logSinSunAngle = FindProperty(kLogSinSunAngle);
             zeroIfPgt1 = FindProperty(kZeroIfPgt1);
             glintNDFIntegrationMode = FindProperty(kGlintNDFIntegrationMode);
+            glintAreaLightSubdivision = FindProperty(kGlintAreaLightSubdivision);
 
             // Sub surface
             diffusionProfileHash = FindPropertyLayered(kDiffusionProfileHash, m_LayerCount);
@@ -702,6 +706,7 @@ namespace UnityEditor.Rendering.HighDefinition
             materialEditor.ShaderProperty(logSinSunAngle, Styles.logSinSunAngleText);
             materialEditor.ShaderProperty(zeroIfPgt1, Styles.zeroIfPgt1Text);
             materialEditor.ShaderProperty(glintNDFIntegrationMode, Styles.glintNDFIntegrationModeText);
+            materialEditor.ShaderProperty(glintAreaLightSubdivision, Styles.glintAreaLightSubdivisionText);
 
             EditorGUILayout.Space();
         }

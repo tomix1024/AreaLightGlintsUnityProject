@@ -22,6 +22,8 @@ float ComputeTotalNDF(float roughness)
 #endif
 }
 
+#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Glints/GlintsSubdivision.hlsl"
+
 
 
 float SampleGlints2024NDF(float3 halfwayTS, float LdotH, float roughness, float2 uv, float2 duvdx, float2 duvdy)
