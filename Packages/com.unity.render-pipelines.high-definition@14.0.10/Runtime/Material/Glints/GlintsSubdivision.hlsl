@@ -468,4 +468,268 @@ float3 ComputeGlints2024_Area_Subdivided(float3 halfwayTS, float LdotH, float ro
     return ltcValue;
 }
 
+
+
+void IntegrateDGGXOnly_AreaRef_ImpBSDF_Subdivided(float NdotV, float4x3 lightVerts, float roughness, float3 fresnel0, out float ndf_value, out float ndf_subdivided[GLINT_SUBDIVISION_CELL_COUNT], out float3 brdf_value, out float3 brdf_subdivided[GLINT_SUBDIVISION_CELL_COUNT], uint sampleCount = 512)
+{
+    ndf_value = 0;
+    brdf_value = float3(0, 0, 0);
+    for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
+    {
+        ndf_subdivided[i] = 0;
+        brdf_subdivided[i] = float3(0, 0, 0);
+    }
+
+    // Cache for V term...
+    float partLambdaV = GetSmithJointGGXPartLambdaV(NdotV, roughness);
+
+    // lightVerts are in local coordinate system!
+    // see GetOrthoBasisViewNormal
+    // X axis ~ view direction
+    // Z axis ~ normal
+
+    float3 V   = float3(sqrt(1 - NdotV * NdotV), 0, NdotV);
+    float3x3 localToWorld = k_identity3x3;
+
+    // Cone normals point to top-left ish.
+    float3 coneNormalsX[1 + GLINT_SUBDIVISION_CELL_COUNT_X];
+    float3 coneNormalsY[1 + GLINT_SUBDIVISION_CELL_COUNT_Y];
+
+    // vxy
+    float3 v00 = normalize(lightVerts[0]); //--
+    float3 v01 = normalize(lightVerts[1]); //-+
+    float3 v11 = normalize(lightVerts[2]); //++
+    float3 v10 = normalize(lightVerts[3]); //+-
+
+    // cos theta along x axis for lower/upper y boundary
+    float cosTheta_X0 = dot(v00, v10);
+    float cosTheta_X1 = dot(v01, v11);
+    // cos theta along y axis for lower/upper x boundary
+    float cosTheta_0Y = dot(v00, v01);
+    float cosTheta_1Y = dot(v10, v11);
+    // Pack into float4...
+    float4 cosTheta = float4(cosTheta_X0, cosTheta_X1, cosTheta_0Y, cosTheta_1Y);
+    float4 sinTheta = sqrt(1 - cosTheta*cosTheta);
+    float4 theta = acos(cosTheta);
+    // Compute normals along x axis
+    for (uint x = 0; x < GLINT_SUBDIVISION_CELL_COUNT_X+1; ++x)
+    {
+        // Slerp along x axis
+        float t = float(x) / float(GLINT_SUBDIVISION_CELL_COUNT_X);
+        float3 v0 = (sin((1-t)*theta.x)/sinTheta.x * v00 + sin(t*theta.x)/sinTheta.x * v10);
+        float3 v1 = (sin((1-t)*theta.y)/sinTheta.y * v01 + sin(t*theta.y)/sinTheta.y * v11);
+        float3 n = cross(v1, v0);
+        coneNormalsX[x] = n;
+    }
+    // Compute normals along y axis
+    for (uint y = 0; y < GLINT_SUBDIVISION_CELL_COUNT_Y+1; ++y)
+    {
+        // Slerp along y axis
+        float t = float(y) / float(GLINT_SUBDIVISION_CELL_COUNT_Y);
+        float3 v0 = (sin((1-t)*theta.z)/sinTheta.z * v00 + sin(t*theta.z)/sinTheta.z * v01);
+        float3 v1 = (sin((1-t)*theta.w)/sinTheta.w * v10 + sin(t*theta.w)/sinTheta.w * v11);
+        float3 n = cross(v0, v1);
+        coneNormalsY[y] = n;
+    }
+
+    [loop]
+    for (uint i = 0; i < sampleCount; ++i)
+    {
+        float2 u = Hammersley2d(i, sampleCount);
+
+        {
+            float3 L;
+            float NdotL;
+            float NdotH;
+            float VdotH;
+            SampleGGXDir(u, V, localToWorld, roughness, L, NdotL, NdotH, VdotH);
+            if (NdotL > 0.0)
+            {
+                // step(a, b) == a <= b ? 1 : 0
+                float ndfWeightOverPdf = rcp(NdotH);
+
+                float V = V_SmithJointGGX(NdotL, NdotV, roughness, partLambdaV);
+                //float V = V_SmithJointGGX(NdotL, NdotV, roughness);
+                float3 F = F_Schlick(fresnel0, VdotH);
+                float3 brdfWeightOverPdf = F * (4.0 * V * NdotL * VdotH / NdotH);
+
+                // Check intersection with area light.
+                // Figure out which cell this samples falls into!
+
+                int xi = -1;
+                // TODO BINARY SEARCH...
+                for (; xi < GLINT_SUBDIVISION_CELL_COUNT_X; ++xi)
+                {
+                    if (dot(coneNormalsX[xi+1], L) > 0)
+                        break;
+                }
+                int yi = -1;
+                // TODO BINARY SEARCH...
+                for (; yi < GLINT_SUBDIVISION_CELL_COUNT_Y; ++yi)
+                {
+                    if (dot(coneNormalsY[yi+1], L) > 0)
+                        break;
+                }
+
+                if (xi >= 0 && xi < GLINT_SUBDIVISION_CELL_COUNT_X && yi >= 0 && yi < GLINT_SUBDIVISION_CELL_COUNT_Y)
+                {
+                    ndf_value += ndfWeightOverPdf;
+                    brdf_value += brdfWeightOverPdf;
+                    ndf_subdivided[yi * GLINT_SUBDIVISION_CELL_COUNT_X + xi] += ndfWeightOverPdf;
+                    brdf_subdivided[yi * GLINT_SUBDIVISION_CELL_COUNT_X + xi] += brdfWeightOverPdf;
+                }
+            }
+        }
+    }
+    ndf_value /= sampleCount;
+    brdf_value /= sampleCount;
+    for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
+    {
+        ndf_subdivided[i] /= sampleCount;
+        brdf_subdivided[i] /= sampleCount;
+    }
+}
+
+void IntegrateDGGXOnly_AreaRef_ImpLight_Subdivided(float NdotV, float4x3 lightVerts, float roughness, float3 fresnel0, out float ndf_value, out float ndf_subdivided[GLINT_SUBDIVISION_CELL_COUNT], out float3 brdf_value, out float3 brdf_subdivided[GLINT_SUBDIVISION_CELL_COUNT], uint sampleCount = 512)
+{
+    ndf_value = 0;
+    brdf_value = float3(0, 0, 0);
+    for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
+    {
+        ndf_subdivided[i] = 0;
+        brdf_subdivided[i] = float3(0, 0, 0);
+    }
+
+    // Cache for V term...
+    float partLambdaV = GetSmithJointGGXPartLambdaV(NdotV, roughness);
+
+    // lightVerts are in local coordinate system!
+    // see GetOrthoBasisViewNormal
+    // X axis ~ view direction
+    // Z axis ~ normal
+
+    float3 V   = float3(sqrt(1 - NdotV * NdotV), 0, NdotV);
+    float3x3 localToWorld = k_identity3x3;
+
+    // vxy
+    float3 v00 = normalize(lightVerts[0]); //--
+    float3 v01 = normalize(lightVerts[1]); //-+
+    float3 v11 = normalize(lightVerts[2]); //++
+    float3 v10 = normalize(lightVerts[3]); //+-
+    float cosTheta0 = dot(v00, v01);
+    float cosTheta1 = dot(v10, v11);
+    float sinTheta0 = sqrt(1 - cosTheta0*cosTheta0);
+    float sinTheta1 = sqrt(1 - cosTheta1*cosTheta1);
+    float theta0 = acos(cosTheta0);
+    float theta1 = acos(cosTheta1);
+    for (int y = 0; y < GLINT_SUBDIVISION_CELL_COUNT_Y; ++y)
+    {
+        // Slerp along y axis
+        float tya = float(y) / float(GLINT_SUBDIVISION_CELL_COUNT_Y);
+        float tyb = float(y+1) / float(GLINT_SUBDIVISION_CELL_COUNT_Y);
+        float3 v0a = normalize(sin((1-tya)*theta0)/sinTheta0 * v00 + sin(tya*theta0)/sinTheta0 * v01);
+        float3 v0b = normalize(sin((1-tyb)*theta0)/sinTheta0 * v00 + sin(tyb*theta0)/sinTheta0 * v01);
+        float3 v1a = normalize(sin((1-tya)*theta1)/sinTheta1 * v10 + sin(tya*theta1)/sinTheta1 * v11);
+        float3 v1b = normalize(sin((1-tyb)*theta1)/sinTheta1 * v10 + sin(tyb*theta1)/sinTheta1 * v11);
+
+        float cosTheta_a = dot(v0a, v1a);
+        float cosTheta_b = dot(v0b, v1b);
+        float sinTheta_a = sqrt(1 - cosTheta_a*cosTheta_a);
+        float sinTheta_b = sqrt(1 - cosTheta_b*cosTheta_b);
+        float theta_a = acos(cosTheta_a);
+        float theta_b = acos(cosTheta_b);
+        for (int x = 0; x < GLINT_SUBDIVISION_CELL_COUNT_X; ++x)
+        {
+            // Slerp along x axis
+            float txa = float(x) / float(GLINT_SUBDIVISION_CELL_COUNT_X);
+            float txb = float(x+1) / float(GLINT_SUBDIVISION_CELL_COUNT_X);
+            float3 vaa = normalize(sin((1-txa)*theta_a)/sinTheta_a * v0a + sin(txa*theta_a)/sinTheta_a * v1a);
+            float3 vba = normalize(sin((1-txb)*theta_a)/sinTheta_a * v0a + sin(txb*theta_a)/sinTheta_a * v1a);
+            float3 vab = normalize(sin((1-txa)*theta_b)/sinTheta_b * v0b + sin(txa*theta_b)/sinTheta_b * v1b);
+            float3 vbb = normalize(sin((1-txb)*theta_b)/sinTheta_b * v0b + sin(txb*theta_b)/sinTheta_b * v1b);
+
+            // "Lower" triangle
+            float3 eax = vba - vaa;
+            float3 eay = vab - vaa;
+            float3 na = normalize(cross(eay, eax));//normalize(vaa + vba + vab);
+            float A2a = length(cross(eay, eax));
+
+            // "Upper" triangle
+            float3 ebx = vab - vbb;
+            float3 eby = vba - vbb;
+            float3 nb = normalize(cross(eby, ebx));//normalize(vbb + vba + vab);
+            float A2b = length(cross(eby, ebx));
+
+            // pa = pb = 0.5
+            // p(v | a) = 1/area_a or 0
+            // p(v | b) = 1/area_b or 0
+            // p(v) = p(v | a) * p(a) + p(v | b) * p(b) = 0.5/area_a or 0.5/area_b
+
+            [loop]
+            for (uint i = 0; i < sampleCount / GLINT_SUBDIVISION_CELL_COUNT; ++i)
+            {
+                float2 u = Hammersley2d(i, sampleCount / GLINT_SUBDIVISION_CELL_COUNT);
+
+                float3 v_sampled;
+                float3 v_normal;
+                float v_A2;
+                if (u.x + u.y < 1)
+                {
+                    // vaa, vab, vba
+                    v_sampled = vaa + u.x * (vab-vaa) + u.y * (vba-vaa);
+                    v_normal = na;
+                    v_A2 = A2a;
+                }
+                else
+                {
+                    // vbb, vba, vab
+                    u = 1-u;
+                    v_sampled = vbb + u.x * (vab-vbb) + u.y * (vba-vbb);
+                    v_normal = nb;
+                    v_A2 = A2b;
+                }
+                // \int_\Omega \cos\theta_i \dx{\omega} = \int_A \cos\theta_i \cos\theta_o / \|v-x\|^2 \dx{v}
+                //v_weight = area * v_cosTheta / dot(v_sampled, v_sampled);
+                float v_weight = v_A2 / dot(v_sampled, v_sampled);
+                v_sampled = normalize(v_sampled);
+                v_weight *= abs(dot(v_sampled, v_normal));
+
+                float3 L = v_sampled;
+                float3 H = normalize(V+L);
+
+                float VdotH = dot(V, H);
+                float NdotH = H.z;
+                float NdotL = L.z;
+
+                float D = D_GGX(NdotH, roughness);
+                float V = V_SmithJointGGX(NdotL, NdotV, roughness, partLambdaV);
+                //float V = V_SmithJointGGX(NdotL, NdotV, roughness);
+                float3 F = F_Schlick(fresnel0, VdotH);
+
+                float ndfWeightOverPdf = abs(v_weight) * D / abs(4*VdotH);
+                float3 brdfWeightOverPdf = F * (abs(v_weight) * D * V * max(0, NdotL));
+
+                ndf_value += ndfWeightOverPdf;
+                brdf_value += brdfWeightOverPdf;
+                ndf_subdivided[y * GLINT_SUBDIVISION_CELL_COUNT_X + x] += ndfWeightOverPdf;
+                brdf_subdivided[y * GLINT_SUBDIVISION_CELL_COUNT_X + x] += brdfWeightOverPdf;
+            }
+        }
+    }
+    ndf_value /= sampleCount / GLINT_SUBDIVISION_CELL_COUNT;
+    brdf_value /= sampleCount / GLINT_SUBDIVISION_CELL_COUNT;
+    for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
+    {
+        ndf_subdivided[i] /= sampleCount / GLINT_SUBDIVISION_CELL_COUNT;
+        brdf_subdivided[i] /= sampleCount / GLINT_SUBDIVISION_CELL_COUNT;
+    }
+}
+
+void IntegrateDGGXOnly_AreaRef_Subdivided(float NdotV, float4x3 lightVerts, float roughness, float3 fresnel0, out float ndf_value, out float ndf_subdivided[GLINT_SUBDIVISION_CELL_COUNT], out float3 brdf_value, out float3 brdf_subdivided[GLINT_SUBDIVISION_CELL_COUNT], uint sampleCount = 512)
+{
+    // Only do light importance sampling here to stratify across subdivision cells!
+    //IntegrateDGGXOnly_AreaRef_ImpBSDF_Subdivided(NdotV, lightVerts, roughness, ndf_value, ndf_subdivided, brdf_value, brdf_subdivided, sampleCount);
+    IntegrateDGGXOnly_AreaRef_ImpLight_Subdivided(NdotV, lightVerts, roughness, fresnel0, ndf_value, ndf_subdivided, brdf_value, brdf_subdivided, sampleCount);
+}
+
 #endif // GLINTS_SUBDIVISION_HLSL

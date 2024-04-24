@@ -123,6 +123,13 @@ namespace UnityEngine.Rendering.HighDefinition
             {
                 int integrationMode = material.GetInt(kGlintNDFIntegrationMode);
                 CoreUtils.SetKeyword(material, "_GLINTS_NDF_DEDICATED_LTC", integrationMode == 1 || integrationMode == 2);
+                CoreUtils.SetKeyword(material, "_GLINTS_NDF_REFERENCE", integrationMode == 3);
+            }
+
+            if (material.HasProperty(kGlintBSDFIntegrationMode))
+            {
+                int integrationMode = material.GetInt(kGlintBSDFIntegrationMode);
+                CoreUtils.SetKeyword(material, "_GLINTS_BSDF_REFERENCE", integrationMode == 1);
             }
 
             if (material.HasProperty(kGlintAreaLightSubdivision))

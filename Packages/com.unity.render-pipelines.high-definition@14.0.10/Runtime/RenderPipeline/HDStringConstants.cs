@@ -1359,6 +1359,7 @@ namespace UnityEngine.Rendering.HighDefinition
 
         // Glints...
         internal const string kGlintNDFIntegrationMode = "_GlintNDFIntegrationMode";
+        internal const string kGlintBSDFIntegrationMode = "_GlintBSDFIntegrationMode";
         internal const string kGlintAreaLightSubdivision = "_GlintAreaLightSubdivision";
         internal const string kLogSinSunAngle = "_LogSinSunAngle";
         internal const string kSunSolidAngle = "_SunSolidAngle";

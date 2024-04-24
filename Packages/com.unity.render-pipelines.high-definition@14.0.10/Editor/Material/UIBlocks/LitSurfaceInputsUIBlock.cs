@@ -113,7 +113,9 @@ namespace UnityEditor.Rendering.HighDefinition
             public static GUIContent logSinSunAngleText = new GUIContent("LogSinSunAngle");
             public static GUIContent zeroIfPgt1Text = new GUIContent("Zero if p > 1");
             public static GUIContent glintNDFIntegrationModeText = new GUIContent("NDFIntegrationMode");
+            public static GUIContent glintBSDFIntegrationModeText = new GUIContent("BSDFIntegrationMode");
             public static GUIContent glintAreaLightSubdivisionText = new GUIContent("AreaLightSubdivision");
+            public static GUIContent glintReferenceLog2SampleCountText = new GUIContent("Reference log2(SampleCount)");
 
             // Layer Options
             public static readonly GUIContent layerTexWorldScaleText = EditorGUIUtility.TrTextContent("World Scale", "Sets the tiling factor of the Planar/Trilinear mapping.");
@@ -243,8 +245,12 @@ namespace UnityEditor.Rendering.HighDefinition
         const string kZeroIfPgt1 = "_ZeroIfPgt1";
         MaterialProperty glintNDFIntegrationMode = null;
         const string kGlintNDFIntegrationMode = "_GlintNDFIntegrationMode";
+        MaterialProperty glintBSDFIntegrationMode = null;
+        const string kGlintBSDFIntegrationMode = "_GlintBSDFIntegrationMode";
         MaterialProperty glintAreaLightSubdivision = null;
         const string kGlintAreaLightSubdivision = "_GlintAreaLightSubdivision";
+        MaterialProperty glintReferenceLog2SampleCount = null;
+        const string kGlintReferenceLog2SampleCount = "_GlintReferenceLog2SampleCount";
 
         // Material ID
         MaterialProperty materialID = null;
@@ -382,7 +388,9 @@ namespace UnityEditor.Rendering.HighDefinition
             logSinSunAngle = FindProperty(kLogSinSunAngle);
             zeroIfPgt1 = FindProperty(kZeroIfPgt1);
             glintNDFIntegrationMode = FindProperty(kGlintNDFIntegrationMode);
+            glintBSDFIntegrationMode = FindProperty(kGlintBSDFIntegrationMode);
             glintAreaLightSubdivision = FindProperty(kGlintAreaLightSubdivision);
+            glintReferenceLog2SampleCount = FindProperty(kGlintReferenceLog2SampleCount);
 
             // Sub surface
             diffusionProfileHash = FindPropertyLayered(kDiffusionProfileHash, m_LayerCount);
@@ -706,7 +714,9 @@ namespace UnityEditor.Rendering.HighDefinition
             materialEditor.ShaderProperty(logSinSunAngle, Styles.logSinSunAngleText);
             materialEditor.ShaderProperty(zeroIfPgt1, Styles.zeroIfPgt1Text);
             materialEditor.ShaderProperty(glintNDFIntegrationMode, Styles.glintNDFIntegrationModeText);
+            materialEditor.ShaderProperty(glintBSDFIntegrationMode, Styles.glintBSDFIntegrationModeText);
             materialEditor.ShaderProperty(glintAreaLightSubdivision, Styles.glintAreaLightSubdivisionText);
+            materialEditor.ShaderProperty(glintReferenceLog2SampleCount, Styles.glintReferenceLog2SampleCountText);
 
             EditorGUILayout.Space();
         }

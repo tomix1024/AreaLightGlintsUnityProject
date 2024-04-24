@@ -1791,9 +1791,24 @@ DirectLighting EvaluateBSDF_Rect(   LightLoopContext lightLoopContext,
                 {
                     float integratedNDF_subdivided[GLINT_SUBDIVISION_CELL_COUNT];
                     float3 ltcValue3_subdivided[GLINT_SUBDIVISION_CELL_COUNT];
+    #if defined(_GLINTS_NDF_REFERENCE) || defined(_GLINTS_BSDF_REFERENCE)
+                    float integratedNDF_ref; // unused
+                    float3 bsdfValue_ref; // unused
+                    float3 bsdfValue_subdivided[GLINT_SUBDIVISION_CELL_COUNT];
+                    IntegrateDGGXOnly_AreaRef_Subdivided(ClampNdotV(preLightData.NdotV), lightVerts, bsdfData.roughnessT, bsdfData.fresnel0, integratedNDF_ref, integratedNDF_subdivided, bsdfValue_ref, bsdfValue_subdivided, 1<<_GlintReferenceLog2SampleCount);
+    #endif // _GLINTS_NDF_REFERENCE || _GLINTS_BSDF_REFERENCE
+    #if !defined(_GLINTS_NDF_REFERENCE) || !defined(_GLINTS_BSDF_REFERENCE)
                     float ltcValue_subdivided[GLINT_SUBDIVISION_CELL_COUNT];
                     // Subdivide light source (in Do domain), but before clipping for simplicity!
                     PolygonIrradiance_Subdivided(lightVerts, preLightData.ltcTransformSpecular, ltcValue_subdivided);
+    #endif // !_GLINTS_NDF_REFERENCE || !_GLINTS_BSDF_REFERENCE
+    #ifdef _GLINTS_NDF_REFERENCE
+                    // integratedNDF might exceed its natural upper bound of preLightData.ndfonlyFGD due to Monte-Carlo noise
+                    float factor = min(1, preLightData.ndfonlyFGD / integratedNDF_ref);
+                    integratedNDF_ref *= factor;
+                    for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
+                        integratedNDF_subdivided[i] *= factor;
+    #else
                     float ltcValueNDF_subdivided[GLINT_SUBDIVISION_CELL_COUNT] = ltcValue_subdivided;
     #ifdef _GLINTS_NDF_DEDICATED_LTC
                     {
@@ -1803,9 +1818,16 @@ DirectLighting EvaluateBSDF_Rect(   LightLoopContext lightLoopContext,
     #endif // _GLINTS_NDF__GLINTS_NDF_DEDICATED_LTC
                     for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
                         integratedNDF_subdivided[i] = preLightData.ndfonlyFGD * ltcValueNDF_subdivided[i];
+    #endif // _GLINTS_NDF_REFERENCE
+    #ifdef _GLINTS_BSDF_REFERENCE
+                    // specularFGD already included in ltcValue here!
+                    for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
+                        ltcValue3_subdivided[i] = bsdfValue_subdivided[i].xyz;
+    #else
                     // specularFGD not included in ltcValue here!
                     for (int i = 0; i < GLINT_SUBDIVISION_CELL_COUNT; ++i)
                         ltcValue3_subdivided[i] = ltcValue_subdivided[i].xxx;
+    #endif // _GLINTS_BSDF_REFERENCE
 
                     float3 L = normalize(lightData.positionRWS);
                     // TODO use mean light dir for halfway computation here.
@@ -1821,6 +1843,15 @@ DirectLighting EvaluateBSDF_Rect(   LightLoopContext lightLoopContext,
                 }
 #else // _GLINTS_SUBDIVIDE_AREA_LIGHT
                 {
+    #if defined(_GLINTS_NDF_REFERENCE) || defined(_GLINTS_BSDF_REFERENCE)
+                    float integratedNDF_ref;
+                    float3 bsdfValue_ref; // ltcValue = bsdfValue/specularFGD;
+                    IntegrateDGGXOnly_AreaRef(ClampNdotV(preLightData.NdotV), lightVerts, bsdfData.roughnessT, bsdfData.fresnel0, integratedNDF_ref, bsdfValue_ref, 1<<_GlintReferenceLog2SampleCount);
+    #endif // _GLINTS_NDF_REFERENCE || _GLINTS_BSDF_REFERENCE
+    #ifdef _GLINTS_NDF_REFERENCE
+                    // integratedNDF_ref might exceed its natural upper bound of preLightData.ndfonlyFGD due to Monte-Carlo noise...
+                    float integratedNDF = min(integratedNDF_ref, preLightData.ndfonlyFGD);
+    #else
                     // TODO validate against using separate LTC transform.
                     // Use `ltcValue` at this stage for NDF integration!
                     float ltcValueNDF = ltcValue.x;
@@ -1831,6 +1862,11 @@ DirectLighting EvaluateBSDF_Rect(   LightLoopContext lightLoopContext,
                     }
     #endif // _GLINTS_NDF__GLINTS_NDF_DEDICATED_LTC
                     float integratedNDF = preLightData.ndfonlyFGD * ltcValueNDF;
+    #endif // _GLINTS_NDF_REFERENCE
+    #ifdef _GLINTS_BSDF_REFERENCE
+                    // NOTE: We already include specularFGD in ltcValue!
+                    ltcValue = bsdfValue_ref;
+    #endif // _GLINTS_BSDF_REFERENCE
 
                     float3 L = normalize(lightData.positionRWS);
 
@@ -1864,7 +1900,12 @@ DirectLighting EvaluateBSDF_Rect(   LightLoopContext lightLoopContext,
             // We need to multiply by the magnitude of the integral of the BRDF
             // ref: http://advances.realtimerendering.com/s2016/s2016_ltc_fresnel.pdf
             // This value is what we store in specularFGD, so reuse it
+    #ifdef _GLINTS_BSDF_REFERENCE
+            // specularFGD already included in "ltcValue" for reference BSDF...
+            lighting.specular += ltcValue;
+    #else
             lighting.specular += preLightData.specularFGD * ltcValue;
+    #endif // _GLINTS_BSDF_REFERENCE
 
             // Evaluate the coat part
             if (HasFlag(bsdfData.materialFeatures, MATERIALFEATUREFLAGS_LIT_CLEAR_COAT))
