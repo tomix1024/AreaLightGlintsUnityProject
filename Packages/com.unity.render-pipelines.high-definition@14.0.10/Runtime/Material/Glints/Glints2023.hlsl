@@ -95,7 +95,7 @@ float2x2 Inverse(float2x2 A)
 	return float2x2(A[1][1], -A[0][1], -A[1][0], A[0][0]) / max(1e-6, determinant(A));
 }
 
-void GetGradientEllipse(float2 duvdx, float2 duvdy, out float2 ellipseMajor, out float2 ellipseMinor)
+void GetGradientEllipse(float2 duvdx, float2 duvdy, out float2 ellipseMajorAxis, out float2 ellipseMinorAxis, out float ellipseMajorLength, out float ellipseMinorLength)
 {
 	float2x2 J = float2x2(duvdx, duvdy);
 	J = Inverse(J);
@@ -115,8 +115,43 @@ void GetGradientEllipse(float2 duvdx, float2 duvdy, out float2 ellipseMajor, out
 	float2 A1 = float2(L2 - d, c);
 	float r0 = rsqrt(L1);
 	float r1 = rsqrt(L2);
-	ellipseMajor = normalize(A0) * r0;
-	ellipseMinor = normalize(A1) * r1;
+	//ellipseMajor = normalize(A0) * r0;
+	//ellipseMinor = normalize(A1) * r1;
+	ellipseMajorAxis = normalize(A0);
+	ellipseMinorAxis = normalize(A1);
+	ellipseMajorLength = r0;
+	ellipseMinorLength = r1;
+}
+
+void GetGradientEllipseNew(float2 duvdx, float2 duvdy, out float2 ellipseMajorAxis, out float2 ellipseMinorAxis, out float ellipseMajorLength, out float ellipseMinorLength)
+{
+	float2x2 J = float2x2(duvdx, duvdy);
+	// Do computation without inversion! (=> eigen values are inverted)
+	//J = Inverse(J);
+	// Also communte J.t @ J ...
+	J = mul(transpose(J), J);
+
+	// NOTE: J is symmetric here, therefore b=c
+	float a = J[0][0];
+	float b = J[0][1];
+	float c = b;//J[1][0];
+	float d = J[1][1];
+
+	float T = a + d;
+	float D = a * d - b * c;
+	float L1 = T / 2.0 - sqrt(max(0, T * T / 4 - D));
+	float L2 = T / 2.0 + sqrt(max(0, T * T / 4 - D));
+
+	float2 A0 = float2(L1 - d, c);//lerp(float2(L1 - d, c), float2(b, L1 - a), abs(L1 - a) > abs(L1 - d));
+	float2 A1 = float2(L2 - d, c);//lerp(float2(L2 - d, c), float2(b, L2 - a), abs(L2 - a) > abs(L2 - d));
+	float r0 = sqrt(L1);
+	float r1 = sqrt(L2);
+	//ellipseMinor = normalize(A0) * r0;
+	//ellipseMajor = normalize(A1) * r1;
+	ellipseMajorAxis = -normalize(A1);
+	ellipseMinorAxis = -normalize(A0);
+	ellipseMajorLength = r1;
+	ellipseMinorLength = r0;
 }
 
 float2 VectorToSlope(float3 v)
@@ -417,18 +452,19 @@ void GetAnisoCorrectingGridTetrahedron(bool centerSpecialCase, inout float theta
 float SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF, float2 uv, float2 duvdx, float2 duvdy)
 {
 	// ACCURATE PIXEL FOOTPRINT ELLIPSE
-	float2 ellipseMajor, ellipseMinor;
-	GetGradientEllipse(duvdx, duvdy, ellipseMajor, ellipseMinor);
-	float ellipseRatio = length(ellipseMajor) / length(ellipseMinor);
+	float2 ellipseMajorAxis, ellipseMinorAxis;
+	float ellipseMajorLength, ellipseMinorLength;
+	GetGradientEllipseNew(duvdx, duvdy, ellipseMajorAxis, ellipseMinorAxis, ellipseMajorLength, ellipseMinorLength);
+	float ellipseRatio = ellipseMajorLength / ellipseMinorLength;
 
 	// SHARED GLINT NDF VALUES
 	float halfScreenSpaceScaler = _ScreenSpaceScale * 0.5;
-	float footprintArea = length(ellipseMajor) * halfScreenSpaceScaler * length(ellipseMinor) * halfScreenSpaceScaler * 4.0;
+	float footprintArea = ellipseMajorLength * halfScreenSpaceScaler * ellipseMinorLength * halfScreenSpaceScaler * 4.0;
 	float2 slope = localHalfVector.xy; // Orthogrtaphic slope projected grid
 	float rescaledTargetNDF = targetNDF / maxNDF;
 
 	// MANUAL LOD COMPENSATION
-	float lod = log2(length(ellipseMinor) * halfScreenSpaceScaler);
+	float lod = log2(ellipseMinorLength * halfScreenSpaceScaler);
 	float lod0 = floor(lod); //lod >= 0.0 ? (int)(lod) : (int)(lod - 1.0);
 	float lod1 = lod0 + 1;
 	float divLod0 = exp2(lod0);
@@ -444,7 +480,7 @@ float SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF,
 
 	// MANUAL ANISOTROPY ROTATION COMPENSATION
 	float2 v1 = float2(0.0, 1.0);
-	float2 v2 = normalize(ellipseMajor);
+	float2 v2 = ellipseMajorAxis;
 	float theta = atan2(v1.x * v2.y - v1.y * v2.x, v1.x * v2.x + v1.y * v2.y) * RAD2DEG;
 	float thetaGrid = 90.0 / max(ratio0, 2.0);
 	float thetaBin = (int)(theta / thetaGrid) * thetaGrid;
