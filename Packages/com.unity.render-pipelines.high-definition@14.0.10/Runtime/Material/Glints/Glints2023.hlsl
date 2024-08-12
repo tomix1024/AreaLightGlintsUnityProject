@@ -50,6 +50,13 @@ float erfinv(float x)
 	return p * x;
 }
 
+float sampleNormalDistribution(float u, float mu, float sigma)
+{
+	//return mu + sigma * (sqrt(-2.0 * log(u.x))* cos(2.0 * pi * u.y));
+	float x0 = sigma * 1.414213f * erfinv(2.0 * u - 1.0) + mu;
+	return x0;
+}
+
 float3 sampleNormalDistribution(float3 u, float mu, float sigma)
 {
 	//return mu + sigma * (sqrt(-2.0 * log(u.x))* cos(2.0 * pi * u.y));
