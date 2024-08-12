@@ -342,7 +342,7 @@ float SampleGlintGridSimplex(float2 uv, uint gridSeed, float2 slope, float footp
 	float3 microfacetCountBlended = microfacetCount * gridWeight;
 
 	// Compute binomial properties
-	float hitProba = _MicrofacetRoughness * targetNDF; // probability of hitting desired half vector in NDF distribution
+	float hitProba = targetNDF; // probability of hitting desired half vector in NDF distribution
 	float3 footprintOneHitProba = (1.0 - pow(1.0 - hitProba.rrr, microfacetCountBlended)); // probability of hitting at least one microfacet in footprint
 	float3 footprintMean = (microfacetCountBlended - 1.0) * hitProba.rrr; // Expected value of number of hits in the footprint given already one hit
 	float3 footprintSTD = sqrt((microfacetCountBlended - 1.0) * hitProba.rrr * (1.0 - hitProba.rrr)); // Standard deviation of number of hits in the footprint given already one hit
@@ -460,7 +460,7 @@ void GetAnisoCorrectingGridTetrahedron(bool centerSpecialCase, inout float theta
 	return;
 }
 
-float SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF, float2 uv, float2 duvdx, float2 duvdy)
+float SampleGlints2023NDF_Internal(float3 localHalfVector, float successProb, float2 uv, float2 duvdx, float2 duvdy)
 {
 	// ACCURATE PIXEL FOOTPRINT ELLIPSE
 	float2 ellipseMajorAxis, ellipseMinorAxis;
@@ -532,9 +532,16 @@ float SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF,
 	uint gridSeedB = HashWithoutSine13(float3(log2(divLods[tetraB.z]), thetaBins[tetraB.x] % 360, ratios[tetraB.y])) * 4294967296.0;
 	uint gridSeedC = HashWithoutSine13(float3(log2(divLods[tetraC.z]), thetaBins[tetraC.x] % 360, ratios[tetraC.y])) * 4294967296.0;
 	uint gridSeedD = HashWithoutSine13(float3(log2(divLods[tetraD.z]), thetaBins[tetraD.x] % 360, ratios[tetraD.y])) * 4294967296.0;
-	float sampleA = SampleGlintGridSimplex(uvRotA / divLods[tetraA.z] / float2(1.0, ratios[tetraA.y]), gridSeedA, slope, ratios[tetraA.y] * footprintAreas[tetraA.z], rescaledTargetNDF, tetraBarycentricWeights.x);
-	float sampleB = SampleGlintGridSimplex(uvRotB / divLods[tetraB.z] / float2(1.0, ratios[tetraB.y]), gridSeedB, slope, ratios[tetraB.y] * footprintAreas[tetraB.z], rescaledTargetNDF, tetraBarycentricWeights.y);
-	float sampleC = SampleGlintGridSimplex(uvRotC / divLods[tetraC.z] / float2(1.0, ratios[tetraC.y]), gridSeedC, slope, ratios[tetraC.y] * footprintAreas[tetraC.z], rescaledTargetNDF, tetraBarycentricWeights.z);
-	float sampleD = SampleGlintGridSimplex(uvRotD / divLods[tetraD.z] / float2(1.0, ratios[tetraD.y]), gridSeedD, slope, ratios[tetraD.y] * footprintAreas[tetraD.z], rescaledTargetNDF, tetraBarycentricWeights.w);
-	return (sampleA + sampleB + sampleC + sampleD) * (1.0 / _MicrofacetRoughness) * maxNDF;
+	float sampleA = SampleGlintGridSimplex(uvRotA / divLods[tetraA.z] / float2(1.0, ratios[tetraA.y]), gridSeedA, slope, ratios[tetraA.y] * footprintAreas[tetraA.z], successProb, tetraBarycentricWeights.x);
+	float sampleB = SampleGlintGridSimplex(uvRotB / divLods[tetraB.z] / float2(1.0, ratios[tetraB.y]), gridSeedB, slope, ratios[tetraB.y] * footprintAreas[tetraB.z], successProb, tetraBarycentricWeights.y);
+	float sampleC = SampleGlintGridSimplex(uvRotC / divLods[tetraC.z] / float2(1.0, ratios[tetraC.y]), gridSeedC, slope, ratios[tetraC.y] * footprintAreas[tetraC.z], successProb, tetraBarycentricWeights.z);
+	float sampleD = SampleGlintGridSimplex(uvRotD / divLods[tetraD.z] / float2(1.0, ratios[tetraD.y]), gridSeedD, slope, ratios[tetraD.y] * footprintAreas[tetraD.z], successProb, tetraBarycentricWeights.w);
+	return SanitizePositiveFinite(sampleA + sampleB + sampleC + sampleD);
+}
+
+float SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF, float2 uv, float2 duvdx, float2 duvdy)
+{
+	float successProb = _MicrofacetRoughness * targetNDF / maxNDF;
+	float result = SampleGlints2023NDF_Internal(localHalfVector, successProb, uv, duvdx, duvdy);
+	return result * (1.0 / _MicrofacetRoughness) * maxNDF;
 }
