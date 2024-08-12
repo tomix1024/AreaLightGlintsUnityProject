@@ -9,6 +9,7 @@ float4 _Glint2023NoiseMap_TexelSize;
 float _ScreenSpaceScale;
 float _LogMicrofacetDensity;
 float _MicrofacetRoughness;
+float _HalfwaySlopeScale; // formerly == 1 / _MicrofacetRoughness
 float _DensityRandomization;
 float _FixSampledMicrofacetCount;
 float _RoundSampledMicrofacetCount;
@@ -279,7 +280,7 @@ void UnpackFloatParallel4(float4 input, out float4 a, out float4 b)
 void CustomRand4Texture(float2 slope, float2 slopeRandOffset, out float4 outUniform, out float4 outGaussian, out float2 slopeLerp)
 {
 	int2 size = _Glint2023NoiseMap_TexelSize.zw;
-	float2 slope2 = abs(slope) / _MicrofacetRoughness;
+	float2 slope2 = abs(slope) * _HalfwaySlopeScale;
 	slope2 = slope2 + (slopeRandOffset * size);
 	slopeLerp = frac(slope2);
 	int2 slopeCoord = int2(floor(slope2)) % size;
