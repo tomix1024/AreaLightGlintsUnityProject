@@ -348,6 +348,9 @@ float SampleGlintGridSimplex(float2 uv, uint gridSeed, float2 slope, float footp
 	float3 footprintSTD = sqrt((microfacetCountBlended - 1.0) * hitProba.rrr * (1.0 - hitProba.rrr)); // Standard deviation of number of hits in the footprint given already one hit
 	float3 binomialSmoothWidth = 0.1 * clamp(footprintOneHitProba * 10, 0.0, 1.0) * clamp((1.0 - footprintOneHitProba) * 10, 0.0, 1.0);
 
+	// This does the trick! It's even continuous around N=1
+	footprintOneHitProba = lerp(footprintOneHitProba, hitProba * microfacetCountBlended, microfacetCountBlended < 1);
+
 	// Generate numbers of reflecting microfacets
 	float result0, result1, result2;
 	result0 = GenerateAngularBinomialValueForSurfaceCell(rand0SlopesB, rand0SlopesG, slopeLerp0, footprintOneHitProba.x, binomialSmoothWidth.x, footprintMean.x, footprintSTD.x, microfacetCountBlended.x);
