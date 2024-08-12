@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/RuntimePlane/RandomPlane.unity
+    guid: f4f247808014be1408ed7d5969253e67
   m_configObjects: {}
