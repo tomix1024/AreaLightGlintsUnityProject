@@ -119,6 +119,15 @@ namespace UnityEngine.Rendering.HighDefinition
                 CoreUtils.SetKeyword(material, "_MATERIAL_FEATURE_GLINTS", materialId == MaterialId.LitGlints);
             }
 
+            if (material.HasProperty(kLogSinSunAngle) && material.HasProperty(kSunSolidAngle))
+            {
+                float logSinSunAngle = material.GetFloat(kLogSinSunAngle);
+                float sinGammaSq = Mathf.Exp(2*logSinSunAngle);
+                float cosGamma = Mathf.Sqrt(1 - sinGammaSq);
+                float Al = 2*Mathf.PI * (1 - cosGamma);
+                material.SetFloat(kSunSolidAngle, Al);
+            }
+
             if (material.HasProperty(kRefractionModel))
             {
                 var canHaveRefraction = material.GetSurfaceType() == SurfaceType.Transparent && !HDRenderQueue.k_RenderQueue_PreRefraction.Contains(material.renderQueue);

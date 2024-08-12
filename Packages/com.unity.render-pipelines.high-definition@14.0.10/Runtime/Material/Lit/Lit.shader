@@ -123,6 +123,10 @@ Shader "HDRP/Lit"
         _DensityRandomization("_DensityRandomization", Float) = 0
         _FixSampledMicrofacetCount("_FixSampledMicrofacetCount", Range(0, 1)) = 0
         _RoundSampledMicrofacetCount("_RoundSampledMicrofacetCount", Range(0, 1)) = 0
+        _OverrideDMax("_OverrideDMax", Range(0, 1)) = 0
+        _LogSinSunAngle("_LogSinSunAngle < 0", Range(-7, 0)) = -5.38 // 4.6e-3 // TODO maybe sin(angle) in 0, 1 instead?
+        [HideInInspector]_SunSolidAngle("_SunSolidAngle", Float) = 0.00006670272
+        _ZeroIfPgt1("_ZeroIfPgt1", Range(0, 1)) = 0
 
 
         // Stencil state

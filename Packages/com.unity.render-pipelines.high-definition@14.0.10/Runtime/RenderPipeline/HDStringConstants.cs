@@ -1355,5 +1355,9 @@ namespace UnityEngine.Rendering.HighDefinition
 
         internal const string kCoatMask = "_CoatMask";
         internal const string kCoatMaskMap = "_CoatMaskMap";
+
+        // Glints...
+        internal const string kLogSinSunAngle = "_LogSinSunAngle";
+        internal const string kSunSolidAngle = "_SunSolidAngle";
     }
 }

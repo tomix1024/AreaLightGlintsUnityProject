@@ -109,6 +109,9 @@ namespace UnityEditor.Rendering.HighDefinition
             public static GUIContent densityRandomizationText = new GUIContent("DensityRandomization");
             public static GUIContent fixSampledMicrofacetCountText = new GUIContent("FixSampledMicrofacetCount");
             public static GUIContent roundSampledMicrofacetCountText = new GUIContent("RoundSampledMicrofacetCount", "Only for Subdivision Test");
+            public static GUIContent overrideDMaxText = new GUIContent("OverrideDMax");
+            public static GUIContent logSinSunAngleText = new GUIContent("LogSinSunAngle");
+            public static GUIContent zeroIfPgt1Text = new GUIContent("Zero if p > 1");
 
             // Layer Options
             public static readonly GUIContent layerTexWorldScaleText = EditorGUIUtility.TrTextContent("World Scale", "Sets the tiling factor of the Planar/Trilinear mapping.");
@@ -230,6 +233,12 @@ namespace UnityEditor.Rendering.HighDefinition
         const string kFixSampledMicrofacetCount = "_FixSampledMicrofacetCount";
         MaterialProperty roundSampledMicrofacetCount = null;
         const string kRoundSampledMicrofacetCount = "_RoundSampledMicrofacetCount";
+        MaterialProperty overrideDMax = null;
+        const string kOverrideDMax = "_OverrideDMax";
+        MaterialProperty logSinSunAngle = null;
+        const string kLogSinSunAngle = "_LogSinSunAngle";
+        MaterialProperty zeroIfPgt1 = null;
+        const string kZeroIfPgt1 = "_ZeroIfPgt1";
 
         // Material ID
         MaterialProperty materialID = null;
@@ -363,6 +372,9 @@ namespace UnityEditor.Rendering.HighDefinition
             densityRandomization = FindProperty(kDensityRandomization);
             fixSampledMicrofacetCount = FindProperty(kFixSampledMicrofacetCount);
             roundSampledMicrofacetCount = FindProperty(kRoundSampledMicrofacetCount);
+            overrideDMax = FindProperty(kOverrideDMax);
+            logSinSunAngle = FindProperty(kLogSinSunAngle);
+            zeroIfPgt1 = FindProperty(kZeroIfPgt1);
 
             // Sub surface
             diffusionProfileHash = FindPropertyLayered(kDiffusionProfileHash, m_LayerCount);
@@ -682,6 +694,9 @@ namespace UnityEditor.Rendering.HighDefinition
             materialEditor.ShaderProperty(densityRandomization, Styles.densityRandomizationText);
             materialEditor.ShaderProperty(fixSampledMicrofacetCount, Styles.fixSampledMicrofacetCountText);
             materialEditor.ShaderProperty(roundSampledMicrofacetCount, Styles.roundSampledMicrofacetCountText);
+            materialEditor.ShaderProperty(overrideDMax, Styles.overrideDMaxText);
+            materialEditor.ShaderProperty(logSinSunAngle, Styles.logSinSunAngleText);
+            materialEditor.ShaderProperty(zeroIfPgt1, Styles.zeroIfPgt1Text);
 
             EditorGUILayout.Space();
         }

@@ -11,7 +11,7 @@
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/SubsurfaceScattering/SubsurfaceScattering.hlsl"
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/NormalBuffer.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/VolumeRendering.hlsl"
-#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Glints/Glints2023.hlsl"
+#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Glints/Glints2024.hlsl"
 
 //-----------------------------------------------------------------------------
 // Configuration
@@ -1387,15 +1387,12 @@ CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
         if (HasFlag(bsdfData.materialFeatures, MATERIALFEATUREFLAGS_LIT_GLINTS) &&
             dot(bsdfData.glintDUVDX, bsdfData.glintDUVDX) > 0 && dot(bsdfData.glintDUVDY, bsdfData.glintDUVDY) > 0)
         {
-            float Dn = D_GGX(1, bsdfData.roughnessT);
-            float Dh = D_GGX(NdotH, bsdfData.roughnessT);
             float Vis = V_SmithJointGGX(abs(NdotL), clampedNdotV, bsdfData.roughnessT, preLightData.partLambdaV);
-
             float3 H = (L + V) * invLenLV;
             float TdotH = dot(bsdfData.tangentWS, H);
             float BdotH = dot(bsdfData.bitangentWS, H);
             float3 halfwayTS = float3(TdotH, BdotH, NdotH);
-            float D = SampleGlints2023NDF(halfwayTS, Dh, Dn, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+            float D = SampleGlints2024NDF(halfwayTS, LdotH, bsdfData.roughnessT, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
             DV = max(0, D) * Vis;
         }
         else
