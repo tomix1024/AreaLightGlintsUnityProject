@@ -10,6 +10,7 @@ float _ScreenSpaceScale;
 float _LogMicrofacetDensity;
 float _MicrofacetRoughness;
 float _DensityRandomization;
+float _FixSampledMicrofacetCount;
 
 //=======================================================================================
 // TOOLS
@@ -295,7 +296,9 @@ float GenerateAngularBinomialValueForSurfaceCell(float4 randB, float4 randG, flo
 		gating = randB < footprintOneHitProba;
 
 	float4 gauss = randG * footprintSTD + footprintMean;
-	gauss = clamp(floor(gauss), 0, microfacetCount);
+	// The microfacet count should be reduced by 1 after the gating!
+	float fixedMicrofacetCount = lerp(microfacetCount, max(0, microfacetCount-1), _FixSampledMicrofacetCount);
+	gauss = clamp(gauss, 0, fixedMicrofacetCount);
 	float4 results = gating * (1.0 + gauss);
 	float result = BilinearLerp(results, slopeLerp);
 	return result;
