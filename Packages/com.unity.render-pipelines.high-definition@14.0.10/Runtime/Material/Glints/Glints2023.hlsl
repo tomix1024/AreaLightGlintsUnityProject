@@ -11,6 +11,7 @@ float _LogMicrofacetDensity;
 float _MicrofacetRoughness;
 float _DensityRandomization;
 float _FixSampledMicrofacetCount;
+float _RoundSampledMicrofacetCount;
 
 //=======================================================================================
 // TOOLS
@@ -300,6 +301,9 @@ float GenerateAngularBinomialValueForSurfaceCell(float4 randB, float4 randG, flo
 	float fixedMicrofacetCount = lerp(microfacetCount, max(0, microfacetCount-1), _FixSampledMicrofacetCount);
 	gauss = clamp(gauss, 0, fixedMicrofacetCount);
 	float4 results = gating * (1.0 + gauss);
+	// For subdivision experiment we need to round to integer here!
+	// In practice rounding leads to artifacts in some situations!
+	results = lerp(results, round(results), _RoundSampledMicrofacetCount);
 	float result = BilinearLerp(results, slopeLerp);
 	return result;
 }
