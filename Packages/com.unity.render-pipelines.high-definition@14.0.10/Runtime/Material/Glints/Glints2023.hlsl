@@ -469,13 +469,12 @@ float SampleGlints2023NDF(float3 localHalfVector, float targetNDF, float maxNDF,
 	float ellipseRatio = ellipseMajorLength / ellipseMinorLength;
 
 	// SHARED GLINT NDF VALUES
-	float halfScreenSpaceScaler = _ScreenSpaceScale * 0.5;
-	float footprintArea = ellipseMajorLength * halfScreenSpaceScaler * ellipseMinorLength * halfScreenSpaceScaler * 4.0;
+	//float halfScreenSpaceScaler = _ScreenSpaceScale * 0.5;
+	//float footprintArea = ellipseMajorLength * halfScreenSpaceScaler * ellipseMinorLength * halfScreenSpaceScaler * 4.0;
 	float2 slope = localHalfVector.xy; // Orthogrtaphic slope projected grid
-	float rescaledTargetNDF = targetNDF / maxNDF;
 
 	// MANUAL LOD COMPENSATION
-	float lod = log2(ellipseMinorLength * halfScreenSpaceScaler);
+	float lod = log2(ellipseMinorLength * _ScreenSpaceScale);
 	float lod0 = floor(lod); //lod >= 0.0 ? (int)(lod) : (int)(lod - 1.0);
 	float lod1 = lod0 + 1;
 	float divLod0 = exp2(lod0);
