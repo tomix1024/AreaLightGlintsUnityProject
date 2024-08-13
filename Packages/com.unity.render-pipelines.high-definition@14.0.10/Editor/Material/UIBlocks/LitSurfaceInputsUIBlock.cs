@@ -100,6 +100,13 @@ namespace UnityEditor.Rendering.HighDefinition
             // Clear Coat
             public static GUIContent coatMaskText = new GUIContent("Coat Mask", "Attenuate the coating effect.");
 
+            // Glints
+            public static GUIContent glint2023NoiseMapText = new GUIContent("Glint2023NoiseMap");
+            public static GUIContent screenSpaceScaleText = new GUIContent("ScreenSpaceScale");
+            public static GUIContent logMicrofacetDensityText = new GUIContent("LogMicrofacetDensity");
+            public static GUIContent microfacetRoughnessText = new GUIContent("MicrofacetRoughness");
+            public static GUIContent densityRandomizationText = new GUIContent("DensityRandomization");
+
             // Layer Options
             public static readonly GUIContent layerTexWorldScaleText = EditorGUIUtility.TrTextContent("World Scale", "Sets the tiling factor of the Planar/Trilinear mapping.");
             public static readonly GUIContent UVBlendMaskText = EditorGUIUtility.TrTextContent("BlendMask UV Mapping", "Specifies the UV Mapping mode of the layer.");
@@ -202,6 +209,18 @@ namespace UnityEditor.Rendering.HighDefinition
         const string kIridescenceThicknessMap = "_IridescenceThicknessMap";
         MaterialProperty iridescenceThicknessRemap = null;
         const string kIridescenceThicknessRemap = "_IridescenceThicknessRemap";
+
+        // Glints
+        MaterialProperty glint2023NoiseMap = null;
+        const string kGlint2023NoiseMap = "_Glint2023NoiseMap";
+        MaterialProperty screenSpaceScale = null;
+        const string kScreenSpaceScale = "_ScreenSpaceScale";
+        MaterialProperty logMicrofacetDensity = null;
+        const string kLogMicrofacetDensity = "_LogMicrofacetDensity";
+        MaterialProperty microfacetRoughness = null;
+        const string kMicrofacetRoughness = "_MicrofacetRoughness";
+        MaterialProperty densityRandomization = null;
+        const string kDensityRandomization = "_DensityRandomization";
 
         // Material ID
         MaterialProperty materialID = null;
@@ -326,6 +345,13 @@ namespace UnityEditor.Rendering.HighDefinition
             iridescenceThicknessMap = FindProperty(kIridescenceThicknessMap);
             iridescenceThicknessRemap = FindProperty(kIridescenceThicknessRemap);
 
+            // Glints
+            glint2023NoiseMap = FindProperty(kGlint2023NoiseMap);
+            screenSpaceScale = FindProperty(kScreenSpaceScale);
+            logMicrofacetDensity = FindProperty(kLogMicrofacetDensity);
+            microfacetRoughness = FindProperty(kMicrofacetRoughness);
+            densityRandomization = FindProperty(kDensityRandomization);
+
             // Sub surface
             diffusionProfileHash = FindPropertyLayered(kDiffusionProfileHash, m_LayerCount);
             diffusionProfileAsset = FindPropertyLayered(kDiffusionProfileAsset, m_LayerCount);
@@ -395,7 +421,8 @@ namespace UnityEditor.Rendering.HighDefinition
             bool hasMetallic = materials.All(m =>
                 m.GetMaterialId() == MaterialId.LitStandard ||
                 m.GetMaterialId() == MaterialId.LitAniso ||
-                m.GetMaterialId() == MaterialId.LitIridescence);
+                m.GetMaterialId() == MaterialId.LitIridescence ||
+                m.GetMaterialId() == MaterialId.LitGlints);
 
             if (maskMap[m_LayerIndex].textureValue == null)
             {
@@ -502,6 +529,9 @@ namespace UnityEditor.Rendering.HighDefinition
                         break;
                     case MaterialId.LitIridescence:
                         ShaderIridescenceInputGUI();
+                        break;
+                    case MaterialId.LitGlints:
+                        ShaderGlintsInputGUI();
                         break;
 
                     default:
@@ -622,7 +652,23 @@ namespace UnityEditor.Rendering.HighDefinition
 
         void ShaderClearCoatInputGUI()
         {
+            EditorGUILayout.LabelField("Coat", EditorStyles.boldLabel);
+
             materialEditor.TexturePropertySingleLine(Styles.coatMaskText, coatMaskMap, coatMask);
+        }
+
+        void ShaderGlintsInputGUI()
+        {
+            EditorGUILayout.LabelField("Glints", EditorStyles.boldLabel);
+
+            materialEditor.TexturePropertySingleLine(Styles.glint2023NoiseMapText, glint2023NoiseMap);
+
+            materialEditor.ShaderProperty(screenSpaceScale, Styles.screenSpaceScaleText);
+            materialEditor.ShaderProperty(logMicrofacetDensity, Styles.logMicrofacetDensityText);
+            materialEditor.ShaderProperty(microfacetRoughness, Styles.microfacetRoughnessText);
+            materialEditor.ShaderProperty(densityRandomization, Styles.densityRandomizationText);
+
+            EditorGUILayout.Space();
         }
 
         void DrawLayerOptionsGUI()

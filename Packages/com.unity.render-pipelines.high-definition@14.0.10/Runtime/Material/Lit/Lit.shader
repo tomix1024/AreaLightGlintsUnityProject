@@ -113,6 +113,15 @@ Shader "HDRP/Lit"
         _ATDistance("Transmittance Absorption Distance", Float) = 1.0
         [ToggleUI] _TransparentWritingMotionVec("_TransparentWritingMotionVec", Float) = 0.0
 
+
+        // Glints
+        _Glint2023NoiseMap("_Glint2023NoiseMap", 2D) = "black" {}
+        _ScreenSpaceScale("_ScreenSpaceScale", Float) = 1.0
+        _LogMicrofacetDensity("_LogMicrofacetDensity", Float) = 12.0
+        _MicrofacetRoughness("_MicrofacetRoughness", Range(0, 1)) = 1.0
+        _DensityRandomization("_DensityRandomization", Float) = 0
+
+
         // Stencil state
 
         // Forward
@@ -163,7 +172,7 @@ Shader "HDRP/Lit"
         // Following enum should be material feature flags (i.e bitfield), however due to Gbuffer encoding constrain many combination exclude each other
         // so we use this enum as "material ID" which can be interpreted as preset of bitfield of material feature
         // The only material feature flag that can be added in all cases is clear coat
-        [Enum(Subsurface Scattering, 0, Standard, 1, Anisotropy, 2, Iridescence, 3, Specular Color, 4, Translucent, 5)] _MaterialID("MaterialId", Int) = 1 // MaterialId.Standard
+        [Enum(Subsurface Scattering, 0, Standard, 1, Anisotropy, 2, Iridescence, 3, Specular Color, 4, Translucent, 5, Glints, 6)] _MaterialID("MaterialId", Int) = 1 // MaterialId.Standard
         [ToggleUI] _TransmissionEnable("_TransmissionEnable", Float) = 1.0
 
         _DisplacementMode("DisplacementMode", Int) = 0
@@ -309,12 +318,14 @@ Shader "HDRP/Lit"
     #pragma shader_feature_local_fragment _MATERIAL_FEATURE_CLEAR_COAT
     #pragma shader_feature_local_fragment _MATERIAL_FEATURE_IRIDESCENCE
     #pragma shader_feature_local_fragment _MATERIAL_FEATURE_SPECULAR_COLOR
+    #pragma shader_feature_local_fragment _MATERIAL_FEATURE_GLINTS
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_SUBSURFACE_SCATTERING
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_TRANSMISSION
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_ANISOTROPY
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_CLEAR_COAT
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_IRIDESCENCE
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_SPECULAR_COLOR
+    #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_GLINTS
 
     #pragma shader_feature_local _ADD_PRECOMPUTED_VELOCITY
 

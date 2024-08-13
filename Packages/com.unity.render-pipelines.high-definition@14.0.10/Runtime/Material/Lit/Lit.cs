@@ -18,7 +18,8 @@ namespace UnityEngine.Rendering.HighDefinition
             LitTransmission = 1 << 3,
             LitAnisotropy = 1 << 4,
             LitIridescence = 1 << 5,
-            LitClearCoat = 1 << 6
+            LitClearCoat = 1 << 6,
+            LitGlints = 1 << 7
         };
 
         //-----------------------------------------------------------------------------
@@ -89,6 +90,14 @@ namespace UnityEngine.Rendering.HighDefinition
             public float iridescenceThickness;
             [SurfaceDataAttributes("Iridescence Mask", precision = FieldPrecision.Real)]
             public float iridescenceMask;
+
+            // Glints
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public Vector2 glintUV;
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public Vector2 glintDUVDX;
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public Vector2 glintDUVDY;
 
             // Forward property only
             [SurfaceDataAttributes(new string[] { "Geometric Normal", "Geometric Normal View Space" }, true, precision = FieldPrecision.Real, checkIsNormalized = true)]
@@ -168,6 +177,14 @@ namespace UnityEngine.Rendering.HighDefinition
             public float iridescenceThickness;
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float iridescenceMask;
+
+            // Glints
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public Vector2 glintUV;
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public Vector2 glintDUVDX;
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public Vector2 glintDUVDY;
 
             // ClearCoat
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]

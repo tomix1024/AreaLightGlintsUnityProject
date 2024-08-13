@@ -11,6 +11,7 @@
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/SubsurfaceScattering/SubsurfaceScattering.hlsl"
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/NormalBuffer.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/VolumeRendering.hlsl"
+#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Glints/Glints2023.hlsl"
 
 //-----------------------------------------------------------------------------
 // Configuration
@@ -243,6 +244,13 @@ void FillMaterialIridescence(float mask, float thickness, inout BSDFData bsdfDat
     bsdfData.iridescenceThickness = thickness;
 }
 
+void FillMaterialGlints(float2 glintUV, float2 glintDUVDX, float2 glintDUVDY, inout BSDFData bsdfData)
+{
+    bsdfData.glintUV = glintUV;
+    bsdfData.glintDUVDX = glintDUVDX;
+    bsdfData.glintDUVDY = glintDUVDY;
+}
+
 // Note: this modify the parameter perceptualRoughness and fresnel0, so they need to be setup
 void FillMaterialClearCoatData(float coatMask, inout BSDFData bsdfData)
 {
@@ -440,6 +448,13 @@ BSDFData ConvertSurfaceDataToBSDFData(uint2 positionSS, SurfaceData surfaceData)
     if (HasFlag(surfaceData.materialFeatures, MATERIALFEATUREFLAGS_LIT_IRIDESCENCE))
     {
         FillMaterialIridescence(surfaceData.iridescenceMask, surfaceData.iridescenceThickness, bsdfData);
+    }
+
+    if (HasFlag(surfaceData.materialFeatures, MATERIALFEATUREFLAGS_LIT_GLINTS))
+    {
+        FillMaterialGlints(surfaceData.glintUV, surfaceData.glintDUVDX, surfaceData.glintDUVDY, bsdfData);
+        // Glints also need tangent and bitangent, we just recycle the `FillMaterialAnisotropy` method here...
+        FillMaterialAnisotropy(0, surfaceData.tangentWS, cross(surfaceData.normalWS, surfaceData.tangentWS), bsdfData);
     }
 
     if (HasFlag(surfaceData.materialFeatures, MATERIALFEATUREFLAGS_LIT_CLEAR_COAT))
@@ -1369,8 +1384,25 @@ CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
     }
     else
     {
-        // We use abs(NdotL) to handle the none case of double sided
-        DV = DV_SmithJointGGX(NdotH, abs(NdotL), clampedNdotV, bsdfData.roughnessT, preLightData.partLambdaV);
+        if (HasFlag(bsdfData.materialFeatures, MATERIALFEATUREFLAGS_LIT_GLINTS) &&
+            dot(bsdfData.glintDUVDX, bsdfData.glintDUVDX) > 0 && dot(bsdfData.glintDUVDY, bsdfData.glintDUVDY) > 0)
+        {
+            float Dn = D_GGX(1, bsdfData.roughnessT);
+            float Dh = D_GGX(NdotH, bsdfData.roughnessT);
+            float Vis = V_SmithJointGGX(abs(NdotL), clampedNdotV, bsdfData.roughnessT, preLightData.partLambdaV);
+
+            float3 H = (L + V) * invLenLV;
+            float TdotH = dot(bsdfData.tangentWS, H);
+            float BdotH = dot(bsdfData.bitangentWS, H);
+            float3 halfwayTS = float3(TdotH, BdotH, NdotH);
+            float D = SampleGlints2023NDF(halfwayTS, Dh, Dn, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+            DV = max(0, D) * Vis;
+        }
+        else
+        {
+            // We use abs(NdotL) to handle the none case of double sided
+            DV = DV_SmithJointGGX(NdotH, abs(NdotL), clampedNdotV, bsdfData.roughnessT, preLightData.partLambdaV);
+        }
     }
 
     float3 specTerm = F * DV;

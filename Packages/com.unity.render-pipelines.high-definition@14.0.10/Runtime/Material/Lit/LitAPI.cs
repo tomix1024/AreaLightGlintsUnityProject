@@ -116,6 +116,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 CoreUtils.SetKeyword(material, "_MATERIAL_FEATURE_CLEAR_COAT", material.GetFloat(kCoatMask) > 0.0 || material.GetTexture(kCoatMaskMap));
                 CoreUtils.SetKeyword(material, "_MATERIAL_FEATURE_IRIDESCENCE", materialId == MaterialId.LitIridescence);
                 CoreUtils.SetKeyword(material, "_MATERIAL_FEATURE_SPECULAR_COLOR", materialId == MaterialId.LitSpecular);
+                CoreUtils.SetKeyword(material, "_MATERIAL_FEATURE_GLINTS", materialId == MaterialId.LitGlints);
             }
 
             if (material.HasProperty(kRefractionModel))
