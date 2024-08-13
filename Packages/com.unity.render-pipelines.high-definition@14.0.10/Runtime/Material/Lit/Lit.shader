@@ -131,6 +131,7 @@ Shader "HDRP/Lit"
         [Enum(Specular LTC, 0, Reference, 1)] _GlintBSDFIntegrationMode("_GlintBSDFIntegrationMode", Int) = 0
         [ToggleUI]_GlintAreaLightSubdivision("_GlintAreaLightSubdivision", Float) = 0
         _GlintReferenceLog2SampleCount("_GlintReferenceLog2SampleCount", Int) = 12 // 4096
+        [Enum(Default, 0, Optimized, 1, Simple, 2)] _GlintRuntimeMode("_GlintRuntimeMode", Int) = 0
 
 
         // Stencil state
@@ -338,6 +339,7 @@ Shader "HDRP/Lit"
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_SPECULAR_COLOR
     #pragma shader_feature_local_raytracing _MATERIAL_FEATURE_GLINTS
 
+    #pragma shader_feature_local_fragment _ _GLINTS_FORCE_OURS _GLINTS_FORCE_SIMPLE
     #pragma shader_feature_local_fragment _ _GLINTS_NDF_DEDICATED_LTC _GLINTS_NDF_REFERENCE
     #pragma shader_feature_local_fragment _ _GLINTS_BSDF_REFERENCE
     #pragma shader_feature_local_fragment _ _GLINTS_SUBDIVIDE_AREA_LIGHT

@@ -58,6 +58,37 @@ float SampleGlints2024NDF(float3 halfwayTS, float LdotH, float roughness, float2
     return D;
 }
 
+float SampleGlints2024NDF_2023Wrapped(float3 halfwayTS, float LdotH, float roughness, float2 uv, float2 duvdx, float2 duvdy)
+{
+    // Wrapper for previous method with our interface...
+    float Dtarget = D_GGX(halfwayTS.z, roughness);
+    float Dmax = D_GGX(1, roughness);
+	return SampleGlints2023NDF(halfwayTS, Dtarget, Dmax, uv, duvdx, duvdy);
+}
+
+float SampleGlints2024NDF_Optimized(float3 halfwayTS, float LdotH, float roughness, float2 uv, float2 duvdx, float2 duvdy)
+{
+    float Dtarget = D_GGX(halfwayTS.z, roughness);
+
+    // Approx. \int_hemisphere D(h) dh
+    float SD = ComputeTotalNDF(roughness);
+    // Sun:
+    // omega = 6.8e-5 sr.
+    // sin(gamma) = 4.6e-3 == gamma
+    //float sinGammaSq = exp(2*_LogSinSunAngle);
+    //float cosGamma = sqrt(1 - sinGammaSq);
+    //float Al = 2*PI * (1.0 - cosGamma);
+    float Al = _SunSolidAngle;
+    float Ah = Al / abs(4*LdotH);
+    float Dmax = SD / Ah;
+    Dmax = max(Dmax, Dtarget);
+
+	float successProb = Dtarget / Dmax;
+	float result = SampleGlints2023NDF_Internal(halfwayTS, successProb, uv, duvdx, duvdy);
+	float D = result * Dmax;
+    return D;
+}
+
 
 
 void IntegrateDGGXOnly_AreaRef(float NdotV, float4x3 lightVerts, float roughness, float3 fresnel0, out float ndfValue, out float3 bsdfValue, uint sampleCount = 512)
@@ -229,6 +260,32 @@ float SampleGlints2024NDF_Area(float3 halfwayTS, float LdotH, float roughness, f
     // Explicitly simulate smooth surface if _LogMicrofacetDensity < 0
     if (_LogMicrofacetDensity <= 0)
         return 1;
+
+    // Division by microfacet count handled internally.
+    float D = SampleGlints2023NDF_Internal(halfwayTS, p, uv, duvdx, duvdy) / p;
+    return D;
+}
+
+float SampleGlints2024NDF_Area_2023Wrapped(float3 halfwayTS, float LdotH, float roughness, float integratedNDF, float4x3 lightVerts, float2 uv, float2 duvdx, float2 duvdy)
+{
+    // Wrapper for previous method with our interface...
+    float Dtarget = D_GGX(halfwayTS.z, roughness);
+    float Dmax = D_GGX(1, roughness);
+	return SampleGlints2023NDF(halfwayTS, Dtarget, Dmax, uv, duvdx, duvdy);
+}
+
+float SampleGlints2024NDF_Area_Optimized(float3 halfwayTS, float LdotH, float roughness, float integratedNDF, float4x3 lightVerts, float2 uv, float2 duvdx, float2 duvdy)
+{
+    // integratedNDF = \int_light D(H)/(4*LdotH) dL
+
+    // Approx. \int_hemisphere D(h) dh
+    float totalNDF = ComputeTotalNDF(roughness);
+
+    float p = saturate(integratedNDF / totalNDF); // = R*Dtarget/Dmax
+
+    // Skip computation below if probability is zero!
+    if (p == 0)
+        return 0;
 
     // Division by microfacet count handled internally.
     float D = SampleGlints2023NDF_Internal(halfwayTS, p, uv, duvdx, duvdy) / p;

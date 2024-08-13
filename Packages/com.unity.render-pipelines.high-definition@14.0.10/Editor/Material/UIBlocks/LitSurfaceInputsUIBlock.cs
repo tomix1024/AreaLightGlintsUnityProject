@@ -116,6 +116,7 @@ namespace UnityEditor.Rendering.HighDefinition
             public static GUIContent glintBSDFIntegrationModeText = new GUIContent("BSDFIntegrationMode");
             public static GUIContent glintAreaLightSubdivisionText = new GUIContent("AreaLightSubdivision");
             public static GUIContent glintReferenceLog2SampleCountText = new GUIContent("Reference log2(SampleCount)");
+            public static GUIContent glintRuntimeModeText = new GUIContent("GlintRuntimeMode");
 
             // Layer Options
             public static readonly GUIContent layerTexWorldScaleText = EditorGUIUtility.TrTextContent("World Scale", "Sets the tiling factor of the Planar/Trilinear mapping.");
@@ -251,6 +252,8 @@ namespace UnityEditor.Rendering.HighDefinition
         const string kGlintAreaLightSubdivision = "_GlintAreaLightSubdivision";
         MaterialProperty glintReferenceLog2SampleCount = null;
         const string kGlintReferenceLog2SampleCount = "_GlintReferenceLog2SampleCount";
+        MaterialProperty glintRuntimeMode = null;
+        const string kGlintRuntimeMode = "_GlintRuntimeMode";
 
         // Material ID
         MaterialProperty materialID = null;
@@ -391,6 +394,7 @@ namespace UnityEditor.Rendering.HighDefinition
             glintBSDFIntegrationMode = FindProperty(kGlintBSDFIntegrationMode);
             glintAreaLightSubdivision = FindProperty(kGlintAreaLightSubdivision);
             glintReferenceLog2SampleCount = FindProperty(kGlintReferenceLog2SampleCount);
+            glintRuntimeMode = FindProperty(kGlintRuntimeMode);
 
             // Sub surface
             diffusionProfileHash = FindPropertyLayered(kDiffusionProfileHash, m_LayerCount);
@@ -717,6 +721,7 @@ namespace UnityEditor.Rendering.HighDefinition
             materialEditor.ShaderProperty(glintBSDFIntegrationMode, Styles.glintBSDFIntegrationModeText);
             materialEditor.ShaderProperty(glintAreaLightSubdivision, Styles.glintAreaLightSubdivisionText);
             materialEditor.ShaderProperty(glintReferenceLog2SampleCount, Styles.glintReferenceLog2SampleCountText);
+            materialEditor.ShaderProperty(glintRuntimeMode, Styles.glintRuntimeModeText);
 
             EditorGUILayout.Space();
         }

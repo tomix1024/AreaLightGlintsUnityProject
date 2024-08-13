@@ -137,6 +137,13 @@ namespace UnityEngine.Rendering.HighDefinition
                 CoreUtils.SetKeyword(material, "_GLINTS_SUBDIVIDE_AREA_LIGHT", material.GetFloat(kGlintAreaLightSubdivision) > 0);
             }
 
+            if (material.HasProperty(kGlintRuntimeMode))
+            {
+                int runtimeMode = material.GetInt(kGlintRuntimeMode);
+                CoreUtils.SetKeyword(material, "_GLINTS_FORCE_OURS", runtimeMode == 1);
+                CoreUtils.SetKeyword(material, "_GLINTS_FORCE_SIMPLE", runtimeMode == 2);
+            }
+
             if (material.HasProperty(kLogSinSunAngle) && material.HasProperty(kSunSolidAngle))
             {
                 float logSinSunAngle = material.GetFloat(kLogSinSunAngle);

@@ -1409,7 +1409,13 @@ CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
             float TdotH = dot(bsdfData.tangentWS, H);
             float BdotH = dot(bsdfData.bitangentWS, H);
             float3 halfwayTS = float3(TdotH, BdotH, NdotH);
+#if defined(_GLINTS_FORCE_OURS)
+            float D = SampleGlints2024NDF_Optimized(halfwayTS, LdotH, bsdfData.roughnessT, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+#elif defined(_GLINTS_FORCE_SIMPLE)
+            float D = SampleGlints2024NDF_2023Wrapped(halfwayTS, LdotH, bsdfData.roughnessT, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+#else
             float D = SampleGlints2024NDF(halfwayTS, LdotH, bsdfData.roughnessT, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+#endif // _GLINTS_FORCE_OURS, _GLINTS_FORCE_SIMPLE
             DV = max(0, D) * Vis;
         }
         else
@@ -1878,7 +1884,13 @@ DirectLighting EvaluateBSDF_Rect(   LightLoopContext lightLoopContext,
                     float NdotH = dot(bsdfData.normalWS, H);
                     float3 halfwayTS = float3(TdotH, BdotH, NdotH);
 
+    #if defined(_GLINTS_FORCE_OURS)
+                    float D = SampleGlints2024NDF_Area_Optimized(halfwayTS, LdotH, bsdfData.roughnessT, integratedNDF, lightVerts, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+    #elif defined(_GLINTS_FORCE_SIMPLE)
+                    float D = SampleGlints2024NDF_Area_2023Wrapped(halfwayTS, LdotH, bsdfData.roughnessT, integratedNDF, lightVerts, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+    #else
                     float D = SampleGlints2024NDF_Area(halfwayTS, LdotH, bsdfData.roughnessT, integratedNDF, lightVerts, bsdfData.glintUV, bsdfData.glintDUVDX, bsdfData.glintDUVDY);
+    #endif // _GLINTS_FORCE_OURS, _GLINTS_FORCE_SIMPLE
                     // DIRECTLY "COMMIT" THE RESULT OF THE GLINTS TO `ltcValue`!
                     ltcValue *= D;  // TODO anything to take into account here?!
                 }
