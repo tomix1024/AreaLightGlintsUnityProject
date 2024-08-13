@@ -105,7 +105,10 @@ namespace UnityEditor.Rendering.HighDefinition
             public static GUIContent screenSpaceScaleText = new GUIContent("ScreenSpaceScale");
             public static GUIContent logMicrofacetDensityText = new GUIContent("LogMicrofacetDensity");
             public static GUIContent microfacetRoughnessText = new GUIContent("MicrofacetRoughness");
+            public static GUIContent halfwaySlopeScaleText = new GUIContent("HalfwaySlopeScale", "1/MicrofacetRoughness in Delio&Belcour2023");
             public static GUIContent densityRandomizationText = new GUIContent("DensityRandomization");
+            public static GUIContent fixSampledMicrofacetCountText = new GUIContent("FixSampledMicrofacetCount");
+            public static GUIContent roundSampledMicrofacetCountText = new GUIContent("RoundSampledMicrofacetCount", "Only for Subdivision Test");
 
             // Layer Options
             public static readonly GUIContent layerTexWorldScaleText = EditorGUIUtility.TrTextContent("World Scale", "Sets the tiling factor of the Planar/Trilinear mapping.");
@@ -219,8 +222,14 @@ namespace UnityEditor.Rendering.HighDefinition
         const string kLogMicrofacetDensity = "_LogMicrofacetDensity";
         MaterialProperty microfacetRoughness = null;
         const string kMicrofacetRoughness = "_MicrofacetRoughness";
+        MaterialProperty halfwaySlopeScale = null;
+        const string kHalfwaySlopeScale = "_HalfwaySlopeScale";
         MaterialProperty densityRandomization = null;
         const string kDensityRandomization = "_DensityRandomization";
+        MaterialProperty fixSampledMicrofacetCount = null;
+        const string kFixSampledMicrofacetCount = "_FixSampledMicrofacetCount";
+        MaterialProperty roundSampledMicrofacetCount = null;
+        const string kRoundSampledMicrofacetCount = "_RoundSampledMicrofacetCount";
 
         // Material ID
         MaterialProperty materialID = null;
@@ -350,7 +359,10 @@ namespace UnityEditor.Rendering.HighDefinition
             screenSpaceScale = FindProperty(kScreenSpaceScale);
             logMicrofacetDensity = FindProperty(kLogMicrofacetDensity);
             microfacetRoughness = FindProperty(kMicrofacetRoughness);
+            halfwaySlopeScale = FindProperty(kHalfwaySlopeScale);
             densityRandomization = FindProperty(kDensityRandomization);
+            fixSampledMicrofacetCount = FindProperty(kFixSampledMicrofacetCount);
+            roundSampledMicrofacetCount = FindProperty(kRoundSampledMicrofacetCount);
 
             // Sub surface
             diffusionProfileHash = FindPropertyLayered(kDiffusionProfileHash, m_LayerCount);
@@ -666,7 +678,10 @@ namespace UnityEditor.Rendering.HighDefinition
             materialEditor.ShaderProperty(screenSpaceScale, Styles.screenSpaceScaleText);
             materialEditor.ShaderProperty(logMicrofacetDensity, Styles.logMicrofacetDensityText);
             materialEditor.ShaderProperty(microfacetRoughness, Styles.microfacetRoughnessText);
+            materialEditor.ShaderProperty(halfwaySlopeScale, Styles.halfwaySlopeScaleText);
             materialEditor.ShaderProperty(densityRandomization, Styles.densityRandomizationText);
+            materialEditor.ShaderProperty(fixSampledMicrofacetCount, Styles.fixSampledMicrofacetCountText);
+            materialEditor.ShaderProperty(roundSampledMicrofacetCount, Styles.roundSampledMicrofacetCountText);
 
             EditorGUILayout.Space();
         }

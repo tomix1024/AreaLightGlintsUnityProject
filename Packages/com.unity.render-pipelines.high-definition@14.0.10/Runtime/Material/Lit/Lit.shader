@@ -119,7 +119,10 @@ Shader "HDRP/Lit"
         _ScreenSpaceScale("_ScreenSpaceScale", Float) = 1.0
         _LogMicrofacetDensity("_LogMicrofacetDensity", Float) = 12.0
         _MicrofacetRoughness("_MicrofacetRoughness", Range(0, 1)) = 1.0
+        _HalfwaySlopeScale("_HalfwaySlopeScale", Float) = 1.0
         _DensityRandomization("_DensityRandomization", Float) = 0
+        _FixSampledMicrofacetCount("_FixSampledMicrofacetCount", Range(0, 1)) = 0
+        _RoundSampledMicrofacetCount("_RoundSampledMicrofacetCount", Range(0, 1)) = 0
 
 
         // Stencil state
