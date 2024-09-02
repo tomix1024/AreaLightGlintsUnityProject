@@ -51,13 +51,10 @@ Citation
 If you are using this code in academic research, please cite our paper.
 The BibTeX entry is (subject to change)
 ```bibtex
-@article{Kneiphof2024Real,
-    author = {Tom Kneiphof and Reinhard Klein},
-    title = {Real-Time Rendering of Glints in the Presence of Area Lights},
-    journal = {Computer Graphics Forum},
-    volume = {43},
-    number = {7},
-    month = {oct},
-    doi = {TBD}
+@article{kneiphof2024real,
+  title={Real-Time Rendering of Glints in the Presence of Area Lights},
+  author={Kneiphof, Tom and Klein, Reinhard},
+  journal={arXiv preprint arXiv:2408.13611},
+  year={2024}
 }
 ```
