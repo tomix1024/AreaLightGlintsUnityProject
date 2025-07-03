@@ -8,7 +8,7 @@ Announcement
 We have introduced an extension to real-time image-based lighting at EGSR 2025.
 > Tom Kneiphof and Reinhard Klein. "Real-time Image-based Lighting of Glints." Computer Graphics Forum. Vol. 44. No. 4. 2025.
 
-The code for real-time image-based lighting, improved area lights and directional lights will be published soon™.
+The new codebase for **real-time image-based lighting**, ***improved* area lights** and ***improved* directional lights** is located in the [IBLGlints-Demo repository](https://github.com/tomix1024/IBLGlints-Demo).
 
 
 Overview
